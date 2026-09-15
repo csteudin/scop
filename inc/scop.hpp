@@ -26,3 +26,11 @@
 #define WIN_WIDTH   1920
 #define WIN_HEIGHT  1080
 
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <sstream>
+#include <unistd.h>
+// includes all sub classes/files
+#include "Shader.hpp"
+#include "Window.hpp"

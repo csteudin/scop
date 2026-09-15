@@ -11,7 +11,7 @@ GLAD_DIR	= external/glad
 GLAD_SRC	= $(GLAD_DIR)/src/glad.c
 GLAD_OBJ	= $(OBJ_DIR)/glad.o
 
-SRCS		= main.cpp
+SRCS		= main.cpp Shader.cpp Window.cpp
 OBJS		= $(addprefix $(OBJ_DIR)/, $(SRCS:.cpp=.o))
 
 INCLUDES	= -I$(INC_DIR) -I$(GLAD_DIR)/include

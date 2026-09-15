@@ -1,18 +1,8 @@
-#include <iostream>
-
 #include "../inc/scop.hpp"
 
 #include "glad/glad.h"
-
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-
-
-void framebufferSizeCallback(GLFWwindow *win, int width, int height)
-{
-    (void)win;
-    glViewport(0, 0, width, height);
-}
 
 void proccessInput(GLFWwindow *win)
 {
@@ -20,37 +10,50 @@ void proccessInput(GLFWwindow *win)
         glfwSetWindowShouldClose(win, true);
 }
 
-int main()
+int main(int ac, char **av)
 {
-    std::cout << "Hello W0rld\n" << std::endl;
+    (void)ac;
+    (void)av;
 
-    if (!glfwInit())
-        return (1);   
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);    
-    GLFWwindow *win;
-    win = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "ft_scop", nullptr, nullptr);
-    if (!win)
-        return (1); //glfwTerminate()
-    int w, h;
-    glfwGetWindowSize(win, &w, &h);
-    std::cout << "Fenstergroesse: " << w << "x" << h << std::endl;
-    glfwMakeContextCurrent(win);
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-        return (1); //glfwTerminate()
-    glfwSetFramebufferSizeCallback(win, framebufferSizeCallback);
-
-    while(!glfwWindowShouldClose(win))
+    if (ac < 2)
     {
-        proccessInput(win);
-
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        glfwSwapBuffers(win);
-        glfwPollEvents();
+        std::cerr << "Please use the program correct" << std::endl;
+        std::cerr << "Usage: ./scop <file.obj>" << std::endl;
+        return (1);
     }
+    try
+    {
+        Window window(WIN_WIDTH, WIN_HEIGHT, "ft_scop");
+        Shader shader("shader/default.vert", "shader/default.frag");
 
+        while(!window.shouldClose())
+        {
+            proccessInput(window.getHandle());
+
+            glClearColor(0.3f, 0.1f, 0.1f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            shader.use();
+            window.swapBufferAndPollEvent();
+            sleep(1);
+        }
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return (1);
+    }
     return (0);
 }
+
+/*
+    PSEUDO CODE FOR RENDERING
+
+    MAIN()
+    - PARSE OBJFILE TODO:
+    - INIT WINDOW
+        - RENDER LOOP
+            - CHECKINPUT
+            - PUT NEW IMAGE
+    - CLEAN
+*/
