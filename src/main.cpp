@@ -36,6 +36,7 @@ int main(int ac, char **av)
             shader.use();
             window.swapBufferAndPollEvent();
             sleep(1);
+            //glfwSwapInterval(1);
         }
     }
     catch (const std::exception &e)

@@ -6,8 +6,6 @@ Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath)
     std::string fragmentCode = readFile(fragmentPath);
     GLuint vertexShader = compile(vertexCode, GL_VERTEX_SHADER);
     GLuint fragmentShader = compile(fragmentCode, GL_FRAGMENT_SHADER);
-    checkCompileErrors(vertexShader, "VERTEX");
-    checkCompileErrors(fragmentShader, "FRAGMENT");
     this->_id = glCreateProgram();
     glAttachShader(_id, vertexShader);
     glAttachShader(_id, fragmentShader);
@@ -15,20 +13,20 @@ Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath)
     checkCompileErrors(_id, "PROGRAM");
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-    std::cout << "! Shader Created" << std::endl;
+    LOG("! Shader Created");
 }
 
 Shader::~Shader()
 {
     glDeleteProgram(_id);
-    std::cout << "! Shader Destroyed" << std::endl;
+    LOG("! Shader Destroyed");
 }
 
 //public
 void Shader::use() const
 {
     glUseProgram(_id);    
-    std::cout << "! Shader Used" << std::endl;
+    LOG("! Shader Used");
 }
 
 GLuint Shader::getID() const
@@ -58,13 +56,13 @@ GLuint Shader::compile(const std::string &source, GLenum type)
     GLuint id = glCreateShader(type);
     
     glShaderSource(id, 1, &src, nullptr);
-    std::cout << "! Shaders Compiling" << std::endl;
+    LOG("! Shaders Compiling");
     glCompileShader(id);
     
     if (type == GL_VERTEX_SHADER)
         checkCompileErrors(id, "VERTEX");
     else if (type == GL_FRAGMENT_SHADER)
-        checkCompileErrors(id, "FRAGEMENT");
+        checkCompileErrors(id, "FRAGMENT");
     
     return (id);
 }

@@ -23,6 +23,12 @@
 
 #pragma once
 
+#ifdef DEBUG
+  #define LOG(x) do { std::cout << x << std::endl; } while (0)
+#else
+  #define LOG(x)
+#endif
+
 #define WIN_WIDTH   1920
 #define WIN_HEIGHT  1080
 
@@ -31,6 +37,7 @@
 #include <string>
 #include <sstream>
 #include <unistd.h>
+
 // includes all sub classes/files
 #include "Shader.hpp"
 #include "Window.hpp"

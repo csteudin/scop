@@ -14,15 +14,14 @@ Window::Window(int width, int height, const std::string &title)
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
         throw std::runtime_error("gladloadGLLoader failed");
     glfwSetFramebufferSizeCallback(_win, framebufferSizeCallback);
-    std::cout << "! Window Created" << std::endl;
+    LOG("! Window Created");
 }
 
 Window::~Window()
 {
     glfwDestroyWindow(_win);
     glfwTerminate();
-    std::cout << "! Window Destroyed" << std::endl;
-
+    LOG("! Window Destroyed");
 }
 
 bool Window::shouldClose() const
@@ -34,7 +33,7 @@ void Window::swapBufferAndPollEvent()
 {
     glfwSwapBuffers(_win);
     glfwPollEvents();
-    std::cout << "! Window buffer swapped" << std::endl;
+    LOG("! Window Buffer Swapped");
 }
 
 GLFWwindow *Window::getHandle() const

@@ -3,6 +3,10 @@ NAME		= scop
 CXX			= c++
 CXXFLAGS	= -Wall -Wextra -Werror -std=c++17
 
+ifdef DEBUG
+    CXXFLAGS += -DDEBUG -g
+endif
+
 SRCS_DIR	= src
 OBJ_DIR		= obj
 INC_DIR		= inc
