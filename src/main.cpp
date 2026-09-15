@@ -26,6 +26,25 @@ int main(int ac, char **av)
         Window window(WIN_WIDTH, WIN_HEIGHT, "ft_scop");
         Shader shader("shader/default.vert", "shader/default.frag");
 
+        //TESTING - - - - - - - -
+        float vertices[] = {
+            -0.5f, -0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+            0.0f,  0.5f, 0.0f
+        };
+
+        GLuint VAO, VBO;
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        //- - - - - - - - - - - -
+
         while(!window.shouldClose())
         {
             proccessInput(window.getHandle());
@@ -34,10 +53,14 @@ int main(int ac, char **av)
             glClear(GL_COLOR_BUFFER_BIT);
 
             shader.use();
+            glBindVertexArray(VAO);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
             window.swapBufferAndPollEvent();
             sleep(1);
             //glfwSwapInterval(1);
         }
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
     }
     catch (const std::exception &e)
     {
