@@ -4,7 +4,8 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-class Shader    {
+class Shader
+{
     public:
         Shader(const std::string &vertexPath, const std::string &fragmentPath);
         ~Shader();

@@ -1,0 +1,21 @@
+#pragma once
+
+#include "Vec3.hpp"
+
+class Mat4
+{
+    public:
+        float m[4][4];
+
+        Mat4();
+
+        Mat4 operator*(const Mat4 &other) const;
+
+        static Mat4 identity();
+        static Mat4 translate(const Vec3 &t);
+        static Mat4 scale(const Vec3 &s);
+        static Mat4 rotateX(float radians);
+        static Mat4 rotateY(float radians);
+        static Mat4 rotateZ(float radians);
+        static Mat4 perspective(float fovRadians, float aspect, float near, float far);
+};
