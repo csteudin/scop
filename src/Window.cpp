@@ -33,7 +33,6 @@ void Window::swapBufferAndPollEvent()
 {
     glfwSwapBuffers(_win);
     glfwPollEvents();
-    LOG("! Window Buffer Swapped");
 }
 
 GLFWwindow *Window::getHandle() const

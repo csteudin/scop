@@ -12,7 +12,7 @@ struct Vec2
 struct Vertex
 {
     Vec3 position;
-    Vec3 uv;
+    Vec2 uv;
     Vec3 normal;
 };
 
@@ -28,9 +28,9 @@ class Parser    {
         std::vector<unsigned int> _indices;
 
         std::vector<Vec3> _positions;
-        std::vector<Vec3> _uvs;
+        std::vector<Vec2> _uvs;
         std::vector<Vec3> _normals;
 
         void parseLine(const std::string &line);
-        void parseFace(std::istingstream &iss);
+        void parseFace(std::istringstream &iss);
 };

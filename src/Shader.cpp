@@ -26,7 +26,6 @@ Shader::~Shader()
 void Shader::use() const
 {
     glUseProgram(_id);    
-    LOG("! Shader Used");
 }
 
 GLuint Shader::getID() const

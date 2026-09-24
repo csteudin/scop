@@ -25,6 +25,10 @@ int main(int ac, char **av)
     {
         Window window(WIN_WIDTH, WIN_HEIGHT, "ft_scop");
         Shader shader("shader/default.vert", "shader/default.frag");
+       
+        Parser parser("resources/42.obj");
+
+    
 
         //TESTING - - - - - - - -
         float vertices[] = {
@@ -44,6 +48,7 @@ int main(int ac, char **av)
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
         //- - - - - - - - - - - -
+
 
         while(!window.shouldClose())
         {
