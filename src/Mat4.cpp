@@ -110,3 +110,30 @@ Mat4 Mat4::perspective(float fovRadians, float aspect, float near, float far)
 
     return result;
 }
+
+Mat4 Mat4::lookAt(const Vec3 &eye, const Vec3 &target, const Vec3 &up)
+{
+    Vec3 forward = (target - eye).normalize();
+    Vec3 right = forward.cross(up).normalize();
+    Vec3 newUp = right.cross(forward);
+
+    Mat4 result;
+
+    result.m[0][0] = right.x;
+    result.m[0][1] = right.y;
+    result.m[0][2] = right.z;
+
+    result.m[1][0] = newUp.x;
+    result.m[1][1] = newUp.y;
+    result.m[1][2] = newUp.z;
+
+    result.m[2][0] = -forward.x;
+    result.m[2][1] = -forward.y;
+    result.m[2][2] = -forward.z;
+
+    result.m[0][3] = -right.dot(eye);
+    result.m[1][3] = -newUp.dot(eye);
+    result.m[2][3] = forward.dot(eye);
+
+    return result;
+}

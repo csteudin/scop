@@ -27,16 +27,16 @@ int main(int ac, char **av)
         Shader shader("shader/default.vert", "shader/default.frag");
        
         Parser parser(av[1]);
-        
         Mesh mesh(parser.getVertices(), parser.getIndices());
-
-
+        Camera camera(Vec3(0, 0, 5), Vec3(0, 0, 0));
+        
         //TESTING - - - - - - - -
         Mat4 model = Mat4::identity();
-        Mat4 view = Mat4::translate(Vec3(0, 0, -5));
+        Mat4 view = camera.getViewMatrix();
         Mat4 proj = Mat4::perspective(45.0f * 3.14159f / 180.0f, (float)WIN_WIDTH / WIN_HEIGHT, 0.1f, 1000.0f);
         Mat4 mvp = proj * view * model;
         // - - - - - - - - - - -
+
         while(!window.shouldClose())
         {
             proccessInput(window.getHandle());

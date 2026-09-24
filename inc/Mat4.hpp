@@ -18,4 +18,5 @@ class Mat4
         static Mat4 rotateY(float radians);
         static Mat4 rotateZ(float radians);
         static Mat4 perspective(float fovRadians, float aspect, float near, float far);
+        static Mat4 lookAt(const Vec3 &eye, const Vec3 &target, const Vec3 &up);
 };
