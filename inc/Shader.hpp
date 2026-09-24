@@ -3,6 +3,8 @@
 #include "glad/glad.h"
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include "Mat4.hpp"
+
 
 class Shader
 {
@@ -12,6 +14,7 @@ class Shader
 
         void use() const;
         GLuint getID() const;
+        void setMat4(const std::string &name, const Mat4 &mat) const;
 
     private:
         GLuint _id;

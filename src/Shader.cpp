@@ -33,6 +33,13 @@ GLuint Shader::getID() const
     return _id;
 }
 
+void Shader::setMat4(const std::string &name, const Mat4 &mat) const
+{
+    GLint location = glGetUniformLocation(_id, name.c_str());
+    glUniformMatrix4fv(location, 1, GL_TRUE, &mat.m[0][0]);
+}
+
+
 //private
 std::string Shader::readFile(const std::string &path)
 {

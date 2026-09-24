@@ -49,3 +49,4 @@
 #include "Vec3.hpp"
 #include "Mat4.hpp"
 #include "Parser.hpp"
+#include "Mesh.hpp"

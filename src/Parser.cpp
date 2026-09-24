@@ -8,7 +8,7 @@ Parser::Parser(const std::string &path)
     LOG("! Parser Created");
     std::ifstream file(path);
     if(!file.is_open())
-        throw std::runtime_error(".obj file doesnt open");
+        throw std::runtime_error("file does not open");
 
     std::string line;
     while(std::getline(file, line))
