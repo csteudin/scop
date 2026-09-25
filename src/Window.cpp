@@ -13,6 +13,9 @@ Window::Window(int width, int height, const std::string &title)
     glfwMakeContextCurrent(_win);
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
         throw std::runtime_error("gladloadGLLoader failed");
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(_win, &fbWidth, &fbHeight);
+    glViewport(0, 0, fbWidth, fbHeight);
     glfwSetFramebufferSizeCallback(_win, framebufferSizeCallback);
     LOG("! Window Created");
 }
