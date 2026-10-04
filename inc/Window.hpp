@@ -12,6 +12,7 @@ class Window
 
         bool shouldClose() const;
         void swapBufferAndPollEvent();
+        float getAspectRatio() const;
         GLFWwindow *getHandle() const;
 
     private:

@@ -15,7 +15,9 @@ class Shader
         void use() const;
         GLuint getID() const;
         void setMat4(const std::string &name, const Mat4 &mat) const;
-
+        void setInt(const std::string &name, int value) const;
+        void setFloat(const std::string &name, float value) const;
+        
     private:
         GLuint _id;
         std::string readFile(const std::string &path);

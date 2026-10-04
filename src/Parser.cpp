@@ -3,18 +3,40 @@
 #include <sstream>
 #include <stdexcept>
 
+static size_t resolveIndex(int idx, size_t size)
+{
+    long resolved = (idx > 0) ? idx - 1 : static_cast<long>(size) + idx;
+
+    if (idx == 0 || resolved < 0 || resolved >= static_cast<long>(size))
+        throw std::runtime_error("OBJ: index out of range");
+
+    return (static_cast<size_t>(resolved));
+}
+
 Parser::Parser(const std::string &path)
 {
     LOG("! Parser Created");
+    
     std::ifstream file(path);
     if(!file.is_open())
         throw std::runtime_error("file does not open");
 
     std::string line;
+    size_t line_num = 0;
+
     while(std::getline(file, line))
     {
-        parseLine(line);
+        ++line_num;
+        try { parseLine(line); }
+        catch (std::exception &e)
+        {
+            throw std::runtime_error("line " + std::to_string(line_num) + ": " + e.what());
+        }
     }
+    
+    if (_vertices.empty())
+        throw std::runtime_error("OBJ: no faces found");
+    
     if (_normals.empty())
     {
         for (size_t i = 0; i + 2 < _indices.size(); i += 3)
@@ -32,6 +54,7 @@ Parser::Parser(const std::string &path)
             v2.normal = normal;
         }
     }
+
     LOG("Vertices: " << _vertices.size());
     LOG("Indices: " << _indices.size());
     LOG("Triangles: " << _indices.size() / 3);
@@ -56,19 +79,19 @@ void Parser::parseLine(const std::string &line)
 
     if (prefix == "v")
     {
-        float x, y, z;
+        float x = 0, y = 0, z = 0;
         iss >> x >> y >> z;
         _positions.push_back(Vec3(x, y, z));
     }
     else if (prefix == "vt")
     {
-        float x, y;
+        float x = 0, y = 0;
         iss >> x >> y;
         _uvs.push_back(Vec2(x, y));
     }
     else if (prefix == "vn")
     {
-        float x, y, z;
+        float x = 0, y = 0, z = 0;
         iss >> x >> y >> z;
         _normals.push_back(Vec3(x, y, z));
     }
@@ -85,6 +108,21 @@ void Parser::parseFace(std::istringstream &iss)
     std::vector<unsigned int> faceIndices;
     std::string token;
 
+
+    // if (colored == true)
+    // {
+    //     Vec3 faceColor(  //change later
+    //         static_cast<float>(rand()) / RAND_MAX,
+    //         static_cast<float>(rand()) / RAND_MAX,
+    //         static_cast<float>(rand()) / RAND_MAX
+    //     );
+    // }
+    // else{   }
+    
+
+    float g = 0.25f + (0.65f * (static_cast<float>(rand()) / RAND_MAX));
+    Vec3 faceColor(g, g, g);
+
     while(iss >> token)
     {
         std::istringstream tokenStream(token);
@@ -96,20 +134,17 @@ void Parser::parseFace(std::istringstream &iss)
 
         Vertex v ;
 
-        int posIndex = std::stoi(posStr) - 1;
-        v.position = _positions[posIndex];
+        if (posStr.empty())
+            throw std::runtime_error("OBJ: face line is without value !");
+        v.position = _positions[resolveIndex(std::stoi(posStr), _positions.size())];
 
         if (!uvStr.empty())
-        {
-            int uvIndex = std::stoi(uvStr) - 1;
-            v.uv = _uvs[uvIndex];
-        }
+            v.uv = _uvs[resolveIndex(std::stoi(uvStr), _uvs.size())];
 
         if (!normStr.empty())
-        {
-            int normIndex = std::stoi(normStr) - 1;
-            v.normal = _normals[normIndex];
-        }
+            v.normal = _normals[resolveIndex(std::stoi(normStr), _normals.size())];
+
+        v.color = faceColor;
         
         _vertices.push_back(v);
         faceIndices.push_back(_vertices.size() - 1);

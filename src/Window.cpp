@@ -1,4 +1,5 @@
 #include "../inc/scop.hpp"
+#include <GLFW/glfw3.h>
 
 Window::Window(int width, int height, const std::string &title)
 {
@@ -6,13 +7,20 @@ Window::Window(int width, int height, const std::string &title)
         throw std::runtime_error("glfwInit failed");
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);    
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  
     this->_win = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
-    if (!_win)
+    if (!_win){
+        glfwTerminate();
         throw std::runtime_error("glfwCreateWindow failed");
+    }
     glfwMakeContextCurrent(_win);
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    glfwSwapInterval(1);
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
+        glfwDestroyWindow(this->_win);
+        glfwTerminate();
         throw std::runtime_error("gladloadGLLoader failed");
+    }
+    glEnable(GL_DEPTH_TEST);
     int fbWidth, fbHeight;
     glfwGetFramebufferSize(_win, &fbWidth, &fbHeight);
     glViewport(0, 0, fbWidth, fbHeight);
@@ -36,6 +44,13 @@ void Window::swapBufferAndPollEvent()
 {
     glfwSwapBuffers(_win);
     glfwPollEvents();
+}
+
+float Window::getAspectRatio() const
+{
+    int w, h;
+    glfwGetFramebufferSize(_win, &w, &h);
+    return (h == 0) ? 1.0f : static_cast<float>(w) / static_cast<float>(h);
 }
 
 GLFWwindow *Window::getHandle() const

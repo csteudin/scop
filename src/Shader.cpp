@@ -39,6 +39,15 @@ void Shader::setMat4(const std::string &name, const Mat4 &mat) const
     glUniformMatrix4fv(location, 1, GL_TRUE, &mat.m[0][0]);
 }
 
+void Shader::setInt(const std::string &name, int value) const
+{
+    glUniform1i(glGetUniformLocation(_id, name.c_str()), value);
+}
+
+void Shader::setFloat(const std::string &name, float value) const
+{
+    glUniform1f(glGetUniformLocation(_id, name.c_str()), value);
+}
 
 //private
 std::string Shader::readFile(const std::string &path)
@@ -47,17 +56,14 @@ std::string Shader::readFile(const std::string &path)
     std::stringstream buff;
 
     if (!file.is_open())
-        std::cerr << "Error: cannot open " << path << std::endl;
+        throw std::runtime_error("Shader: cannot open " + path);
     buff << file.rdbuf();
 
     return (buff.str());
 }
 
 GLuint Shader::compile(const std::string &source, GLenum type)
-{
-    if (type != GL_VERTEX_SHADER && type != GL_FRAGMENT_SHADER )
-        std::cerr << "Error: compiling wrong type" << std::endl;
-    
+{  
     const char *src = source.c_str();
     GLuint id = glCreateShader(type);
     
@@ -84,7 +90,7 @@ void Shader::checkCompileErrors(GLuint shader, const std::string&type)
         {
             char infolog[1024];
             glGetShaderInfoLog(shader, 1024, nullptr, infolog);
-            std::cerr << "Error: " << infolog << std::endl;
+            throw std::runtime_error(type + " error:\n" + infolog);
         }
     }
     else if (type == "PROGRAM")
@@ -94,7 +100,7 @@ void Shader::checkCompileErrors(GLuint shader, const std::string&type)
         {
             char infolog[1024];
             glGetProgramInfoLog(shader, 1024, nullptr, infolog);
-            std::cerr << "Error: " << infolog << std::endl;
+            throw std::runtime_error(type + " error:\n" + infolog);
         }
     }
 
