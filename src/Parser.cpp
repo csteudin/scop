@@ -55,6 +55,8 @@ Parser::Parser(const std::string &path)
         }
     }
 
+    computeBounds();
+
     LOG("Vertices: " << _vertices.size());
     LOG("Indices: " << _indices.size());
     LOG("Triangles: " << _indices.size() / 3);
@@ -70,6 +72,12 @@ const std::vector<unsigned int> &Parser::getIndices() const
     return (_indices);
 }
 
+const BoundingBox &Parser::getBounds() const
+{
+    return (_bounds);
+}
+
+//private
 void Parser::parseLine(const std::string &line)
 {
     std::istringstream iss(line);
@@ -156,4 +164,25 @@ void Parser::parseFace(std::istringstream &iss)
         _indices.push_back(faceIndices[i]);
         _indices.push_back(faceIndices[i + 1]);
     }
+}
+
+void Parser::computeBounds()
+{
+    _bounds.min = _vertices[0].position;
+    _bounds.max = _vertices[0].position;
+
+    for (const auto &v : _vertices)
+    {
+        _bounds.min.x = std::min(_bounds.min.x, v.position.x);
+        _bounds.min.y = std::min(_bounds.min.y, v.position.y);
+        _bounds.min.z = std::min(_bounds.min.z, v.position.z);
+        _bounds.max.x = std::max(_bounds.max.x, v.position.x);
+        _bounds.max.y = std::max(_bounds.max.y, v.position.y);
+        _bounds.max.z = std::max(_bounds.max.z, v.position.z);
+    }
+}
+
+void Parser::generateUVs()
+{
+
 }

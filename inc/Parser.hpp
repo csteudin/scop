@@ -1,21 +1,9 @@
 #pragma once
 
-#include <Vec3.hpp>
-
-struct Vec2
-{
-    float x, y;
-    Vec2() : x(0), y(0) {}
-    Vec2(float x, float y) : x(x), y(y) {}
-};
-
-struct Vertex
-{
-    Vec3 position;
-    Vec2 uv;
-    Vec3 normal;
-    Vec3 color;
-};
+#include <vector>
+#include <string>
+#include <sstream>
+#include "Vertex.hpp"
 
 class Parser    {
     public:
@@ -23,10 +11,12 @@ class Parser    {
 
         const std::vector<Vertex> &getVertices() const;
         const std::vector<unsigned int> &getIndices() const;
+        const BoundingBox &getBounds() const;
 
     private:
         std::vector<Vertex> _vertices;
         std::vector<unsigned int> _indices;
+        BoundingBox _bounds;
 
         std::vector<Vec3> _positions;
         std::vector<Vec2> _uvs;
@@ -34,4 +24,6 @@ class Parser    {
 
         void parseLine(const std::string &line);
         void parseFace(std::istringstream &iss);
+        void computeBounds();
+        void generateUVs();
 };

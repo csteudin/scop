@@ -51,3 +51,30 @@
 #include "Parser.hpp"
 #include "Mesh.hpp"
 #include "Camera.hpp"
+
+//CONFIG
+namespace cfg {
+    constexpr float PI          = 3.14159265f;
+    constexpr float MOVE_SPEED  = 0.025f;     // units per sec
+    constexpr float KEY_ROT     = 2.0f;     // rotation q/e
+    constexpr float AUTO_ROT    = 0.15f;    // rotation auto
+    constexpr float MOUSE_SENS  = 0.005f;   // rotation p. pixel
+    constexpr float FADE_SPEED  = 2.0f;     // transition speed
+    constexpr float FOV_DEG     = 45.0f;
+}
+
+struct ObjectState
+{
+    Vec3   position;                        // WASD / R / F
+    float  autoRotation  = 0.0f;
+    float  yaw           = 0.0f;            // Q/E
+    float  pitch         = 0.0f;            // 
+    float  distance      = 0.0f;            // 
+    float  startDistance = 0.0f;
+    float  zoomStep      = 0.0f;
+    bool   dragging      = false;           // 
+    double lastX         = 0.0;
+    double lastY         = 0.0;
+    float  blend         = 0.0f;            // 
+    float  blendTarget   = 0.0f;
+};
