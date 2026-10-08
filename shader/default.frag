@@ -10,7 +10,6 @@ uniform float uBlend;
 
 void main()
 {
-    vec4 texColor = texture(uTexture, vUV);
-    vec4 colorAsVec4 = vec4(vColor, 1.0);
-    FragColor = mix(colorAsVec4, texColor, uBlend);
+    vec3 texColor = texture(uTexture, vUV).rgb;
+    FragColor = vec4(mix(vColor, texColor, uBlend), 1.0);
 }

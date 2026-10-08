@@ -42,8 +42,14 @@
 #include <cmath>
 #include <vector>
 #include <unistd.h>
+#include <cstdint>
+#include <iterator>
+#include <algorithm>
+#include <stdexcept>
 
 // Includes all sub classes/files
+#include "Image.hpp"
+#include "Texture.hpp"
 #include "Shader.hpp"
 #include "Window.hpp"
 #include "Vec3.hpp"

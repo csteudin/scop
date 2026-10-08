@@ -53,7 +53,8 @@ int main(int ac, char **av)
         Window window(WIN_WIDTH, WIN_HEIGHT, "ft_scop");
         Shader shader("shader/default.vert", "shader/default.frag"); 
         Mesh mesh(parser.getVertices(), parser.getIndices());
-        
+        Texture texture(ac > 2 ? av[2] : "resources/test_quadrants.bmp");
+
         //init scene with bounding box
         Vec3 objectCenter = parser.getBounds().center();
         float objectRadius = parser.getBounds().radius();
@@ -68,7 +69,6 @@ int main(int ac, char **av)
         //render loop
         float lastFrame = static_cast<float>(glfwGetTime());
         ObjectState state;
-
         while(!window.shouldClose())
         {
             //delta time
@@ -89,12 +89,15 @@ int main(int ac, char **av)
             Mat4 rotation = Mat4::rotateY(state.autoRotation + state.yaw);
             Mat4 backToPlace = Mat4::translate((objectCenter + state.position)); 
             Mat4 model = backToPlace * rotation * toOrigin;
-            Mat4 proj = Mat4::perspective(45.0f * 3.14159f / 180.0f, window.getAspectRatio(), nearPlane, farPlane);
+            Mat4 proj = Mat4::perspective(cfg::FOV_DEG * 3.14159f / 180.0f, window.getAspectRatio(), nearPlane, farPlane);
             Mat4 mvp = proj * view * model;
 
             // draw new image / DRAW
             shader.use();
             shader.setMat4("uMVP", mvp);
+            texture.bind(0);
+            shader.setInt("uTexture", 0);
+            shader.setFloat("uBlend", state.blend);
             mesh.draw();
             window.swapBufferAndPollEvent();
         }

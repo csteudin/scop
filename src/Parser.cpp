@@ -57,6 +57,9 @@ Parser::Parser(const std::string &path)
 
     computeBounds();
 
+    if (_uvs.empty())
+        generateUVs();
+
     LOG("Vertices: " << _vertices.size());
     LOG("Indices: " << _indices.size());
     LOG("Triangles: " << _indices.size() / 3);
@@ -184,5 +187,28 @@ void Parser::computeBounds()
 
 void Parser::generateUVs()
 {
+    float size = _bounds.maxExtent();
+    if (size == 0.0f)
+        size = 1.0f;
 
+    for (size_t i = 0; i + 2 < _indices.size(); i += 3)
+    {
+        Vertex &v0 = _vertices[_indices[i]];
+        Vertex &v1 = _vertices[_indices[i + 1]];
+        Vertex &v2 = _vertices[_indices[i + 2]];
+
+        Vec3 n = (v1.position - v0.position).cross(v2.position - v0.position);
+        float ax = std::fabs(n.x), ay = std::fabs(n.y), az = std::fabs(n.z);
+
+        for (Vertex *v : { &v0, &v1, &v2 })
+        {
+            Vec3 p = v->position - _bounds.min;
+            if (ax >= ay && ax >= az)
+                v->uv = Vec2(p.z / size, p.y / size);      // Seite zeigt in X
+            else if (ay >= az)
+                v->uv = Vec2(p.x / size, p.z / size);      // Seite zeigt in Y
+            else
+                v->uv = Vec2(p.x / size, p.y / size);      // Seite zeigt in Z
+        }
+    }
 }
