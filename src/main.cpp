@@ -38,6 +38,16 @@ void proccessInput(GLFWwindow *win, ObjectState &state, float deltaTime)
     }
 }
 
+void keyCallback(GLFWwindow *win, int key, int x, int action, int y)
+{
+    (void)x;
+    (void)y;
+
+    ObjectState *state = static_cast<ObjectState *>(glfwGetWindowUserPointer(win));
+    if (key == GLFW_KEY_T && action == GLFW_PRESS)
+        state->blendTarget = (state->blendTarget == 0) ? 1 : 0;
+}
+
 int main(int ac, char **av)
 {
     if (ac < 2)
@@ -53,7 +63,7 @@ int main(int ac, char **av)
         Window window(WIN_WIDTH, WIN_HEIGHT, "ft_scop");
         Shader shader("shader/default.vert", "shader/default.frag"); 
         Mesh mesh(parser.getVertices(), parser.getIndices());
-        Texture texture(ac > 2 ? av[2] : "resources/test_quadrants.bmp");
+        Texture texture(ac > 2 ? av[2] : "textures/test_quadrants.bmp");
 
         //init scene with bounding box
         Vec3 objectCenter = parser.getBounds().center();
@@ -69,6 +79,8 @@ int main(int ac, char **av)
         //render loop
         float lastFrame = static_cast<float>(glfwGetTime());
         ObjectState state;
+        glfwSetWindowUserPointer(window.getHandle(), &state);
+        glfwSetKeyCallback(window.getHandle(), keyCallback);
         while(!window.shouldClose())
         {
             //delta time
@@ -80,6 +92,13 @@ int main(int ac, char **av)
             proccessInput(window.getHandle(), state, deltaTime);
             state.autoRotation += cfg::AUTO_ROT * deltaTime;
             
+            //fade
+            float step = cfg::FADE_SPEED * deltaTime;
+            if (state.blend < state.blendTarget)
+                state.blend = std::min(state.blend + step, state.blendTarget);
+            else if (state.blend > state.blendTarget)
+                state.blend = std::max(state.blend - step, state.blendTarget);
+
             //clear buffer / CLEAR
             glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
