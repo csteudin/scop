@@ -22,6 +22,8 @@ class Parser    {
         std::vector<Vec2> _uvs;
         std::vector<Vec3> _normals;
 
+        bool _regenUVs = false;
+
         void parseLine(const std::string &line);
         void parseFace(std::istringstream &iss);
         void computeBounds();

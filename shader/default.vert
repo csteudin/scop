@@ -6,12 +6,16 @@ layout (location = 2) in vec3 aNormal;
 layout (location = 3) in vec3 aColor;
 
 uniform mat4 uMVP;
+uniform mat4 uModel;
+
 out vec3 vColor;
 out vec2 vUV;
+out vec3 vNormal;
 
 void main()
 {
     gl_Position = uMVP * vec4(aPos, 1.0);
     vColor = aColor;
     vUV = aUV;
+    vNormal = mat3(uModel) * aNormal;
 }

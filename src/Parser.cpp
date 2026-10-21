@@ -57,7 +57,7 @@ Parser::Parser(const std::string &path)
 
     computeBounds();
 
-    if (_uvs.empty())
+    if (_uvs.empty() || _regenUVs ==true)
         generateUVs();
 
     LOG("Vertices: " << _vertices.size());
@@ -97,7 +97,9 @@ void Parser::parseLine(const std::string &line)
     else if (prefix == "vt")
     {
         float x = 0, y = 0;
-        iss >> x >> y;
+        iss >> x;
+        if (!(iss >> y) || x < 0.0f || x > 1.0f || y < 0.0f || y > 1.0f)
+            _regenUVs = true;
         _uvs.push_back(Vec2(x, y));
     }
     else if (prefix == "vn")
@@ -119,18 +121,6 @@ void Parser::parseFace(std::istringstream &iss)
     std::vector<unsigned int> faceIndices;
     std::string token;
 
-
-    // if (colored == true)
-    // {
-    //     Vec3 faceColor(  //change later
-    //         static_cast<float>(rand()) / RAND_MAX,
-    //         static_cast<float>(rand()) / RAND_MAX,
-    //         static_cast<float>(rand()) / RAND_MAX
-    //     );
-    // }
-    // else{   }
-    
-
     float g = 0.25f + (0.65f * (static_cast<float>(rand()) / RAND_MAX));
     Vec3 faceColor(g, g, g);
 
@@ -151,6 +141,8 @@ void Parser::parseFace(std::istringstream &iss)
 
         if (!uvStr.empty())
             v.uv = _uvs[resolveIndex(std::stoi(uvStr), _uvs.size())];
+        else
+            _regenUVs = true;
 
         if (!normStr.empty())
             v.normal = _normals[resolveIndex(std::stoi(normStr), _normals.size())];

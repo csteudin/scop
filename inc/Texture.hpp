@@ -9,7 +9,7 @@ class Texture
         Texture(const std::string &tex_path);
         ~Texture();
 
-        void bind(unsigned int uint = 0) const;
+        void bind(unsigned int unit = 0) const;
 
     private:
         GLuint _id;

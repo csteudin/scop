@@ -4,11 +4,9 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-
-
-void proccessInput(GLFWwindow *win, ObjectState &state, float deltaTime)
+void processInput(GLFWwindow *win, ObjectState &state, float deltaTime)
 {
-    float speed = cfg::MOVE_SPEED + deltaTime;
+    float speed = state.moveSpeed * deltaTime; // maybe tweak obj mov speed
     
     if (glfwGetKey(win, GLFW_KEY_ESCAPE) == GLFW_PRESS) //ESC
         glfwSetWindowShouldClose(win, true);
@@ -30,6 +28,22 @@ void proccessInput(GLFWwindow *win, ObjectState &state, float deltaTime)
     if (glfwGetKey(win, GLFW_KEY_F) == GLFW_PRESS) //F
         state.position.y -= speed;
     
+    if (glfwGetMouseButton(win, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    {
+        double x, y;
+        glfwGetCursorPos(win, &x, &y);
+        if (state.dragging)
+        {
+            state.yaw += static_cast<float>(x - state.lastX) * cfg::MOUSE_SENS;
+            state.pitch += static_cast<float>(y - state.lastY) * cfg::MOUSE_SENS;
+        }
+        state.lastX = x;
+        state.lastY = y;
+        state.dragging = true;
+    }
+    else
+        state.dragging = false;
+
     if (glfwGetKey(win, GLFW_KEY_1) == GLFW_PRESS) //1 - RESET
     {
         state.position = Vec3(0, 0, 0); 
@@ -46,6 +60,17 @@ void keyCallback(GLFWwindow *win, int key, int x, int action, int y)
     ObjectState *state = static_cast<ObjectState *>(glfwGetWindowUserPointer(win));
     if (key == GLFW_KEY_T && action == GLFW_PRESS)
         state->blendTarget = (state->blendTarget == 0) ? 1 : 0;
+    if (key == GLFW_KEY_L && action == GLFW_PRESS)
+        state->light = (state->light == 0) ? 1 : 0;
+    if (key == GLFW_KEY_G && action == GLFW_PRESS)
+        state->wireframe = (state->wireframe == 0) ? 1 : 0;
+}
+
+void scrollCallback(GLFWwindow *win, double x, double yOffset)
+{
+    (void)x;
+    ObjectState *state = static_cast<ObjectState *>(glfwGetWindowUserPointer(win));
+    state->distance -= static_cast<float>(yOffset) * state->zoomStep;
 }
 
 int main(int ac, char **av)
@@ -53,7 +78,7 @@ int main(int ac, char **av)
     if (ac < 2)
     {
         std::cerr << "Please use the program correct" << std::endl;
-        std::cerr << "Usage: ./scop <file.obj>" << std::endl;
+        std::cerr << "Usage: ./scop <file.obj> <texture.bmp>" << std::endl;
         return (1);
     }
     try
@@ -63,7 +88,7 @@ int main(int ac, char **av)
         Window window(WIN_WIDTH, WIN_HEIGHT, "ft_scop");
         Shader shader("shader/default.vert", "shader/default.frag"); 
         Mesh mesh(parser.getVertices(), parser.getIndices());
-        Texture texture(ac > 2 ? av[2] : "textures/test_quadrants.bmp");
+        Texture texture(ac > 2 ? av[2] : "textures/kitty.bmp");
 
         //init scene with bounding box
         Vec3 objectCenter = parser.getBounds().center();
@@ -73,12 +98,17 @@ int main(int ac, char **av)
         float farPlane = objectRadius * 10.0f;        
 
         //create viewmatrix
-        Mat4 view = camera.getViewMatrix();
         //Mat4 proj = Mat4::perspective(45.0f * 3.14159f / 180.0f, window.getAspectRatio(), nearPlane, farPlane);
         
         //render loop
         float lastFrame = static_cast<float>(glfwGetTime());
+        int frames = 0;
+        float fpsTimer = 0.0f;
         ObjectState state;
+        state.distance = state.startDistance = objectRadius * cfg::CAM_DISTANCE;
+        state.zoomStep  = objectRadius * 0.1f;
+        state.moveSpeed = objectRadius * cfg::MOVE_SPEED_REL;
+        glfwSetScrollCallback(window.getHandle(), scrollCallback);
         glfwSetWindowUserPointer(window.getHandle(), &state);
         glfwSetKeyCallback(window.getHandle(), keyCallback);
         while(!window.shouldClose())
@@ -87,10 +117,18 @@ int main(int ac, char **av)
             float currentFrame = glfwGetTime();
             float deltaTime = currentFrame - lastFrame;
             lastFrame = currentFrame;
-
+            frames ++;
+            fpsTimer += deltaTime;
+            if (fpsTimer >= 1.0f)
+            {
+                glfwSetWindowTitle(window.getHandle(), ("ft_scop | FPS : " + std::to_string(frames)).c_str());
+                frames = 0;
+                fpsTimer = 0.0f;
+            }
             //movement
-            proccessInput(window.getHandle(), state, deltaTime);
-            state.autoRotation += cfg::AUTO_ROT * deltaTime;
+            processInput(window.getHandle(), state, deltaTime);
+            if (!state.dragging)
+                state.autoRotation += cfg::AUTO_ROT * deltaTime;
             
             //fade
             float step = cfg::FADE_SPEED * deltaTime;
@@ -98,6 +136,11 @@ int main(int ac, char **av)
                 state.blend = std::min(state.blend + step, state.blendTarget);
             else if (state.blend > state.blendTarget)
                 state.blend = std::max(state.blend - step, state.blendTarget);
+    
+            state.distance = std::clamp(state.distance, objectRadius * 1.2f, objectRadius * 6.0f);
+            camera.position = objectCenter + Vec3(0, 0, state.distance);
+            Mat4 view = camera.getViewMatrix();
+            
 
             //clear buffer / CLEAR
             glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
@@ -105,27 +148,30 @@ int main(int ac, char **av)
             
             //calculate view changes / CALCULATE
             Mat4 toOrigin = Mat4::translate(objectCenter * -1.0f);
-            Mat4 rotation = Mat4::rotateY(state.autoRotation + state.yaw);
+            Mat4 rotation = Mat4::rotateX(state.pitch) * Mat4::rotateY(state.autoRotation + state.yaw);
             Mat4 backToPlace = Mat4::translate((objectCenter + state.position)); 
             Mat4 model = backToPlace * rotation * toOrigin;
             Mat4 proj = Mat4::perspective(cfg::FOV_DEG * 3.14159f / 180.0f, window.getAspectRatio(), nearPlane, farPlane);
             Mat4 mvp = proj * view * model;
-
+            
             // draw new image / DRAW
             shader.use();
             shader.setMat4("uMVP", mvp);
+            shader.setMat4("uModel", model);
+            shader.setFloat("uLight", state.light ? 1.0f : 0.0f);
             texture.bind(0);
             shader.setInt("uTexture", 0);
             shader.setFloat("uBlend", state.blend);
+            glPolygonMode(GL_FRONT_AND_BACK, state.wireframe ? GL_LINE : GL_FILL);
             mesh.draw();
             window.swapBufferAndPollEvent();
         }
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << e.what() << std::endl;
-        return (1);
-    }
+}
+catch (const std::exception &e)
+{
+    std::cerr << e.what() << std::endl;
+    return (1);
+}
 
     return (0);
 }
