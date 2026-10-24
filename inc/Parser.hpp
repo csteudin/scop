@@ -28,4 +28,6 @@ class Parser    {
         void parseFace(std::istringstream &iss);
         void computeBounds();
         void generateUVs();
+        void generateNormals();
+
 };

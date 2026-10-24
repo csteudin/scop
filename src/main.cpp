@@ -4,13 +4,18 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+/*  PROCESSINPUT
+    - polled once per frame: reads the keys that are HELD (WASD/R/F move, Q/E turn, 1 reset, ESC
+      quit) and the left-mouse drag
+    - only writes into the ObjectState, the matrices are built later in main()
+    - every speed is multiplied by deltaTime, so the motion is the same at any FPS
+*/
 void processInput(GLFWwindow *win, ObjectState &state, float deltaTime)
 {
     float speed = state.moveSpeed * deltaTime; // maybe tweak obj mov speed
     
     if (glfwGetKey(win, GLFW_KEY_ESCAPE) == GLFW_PRESS) //ESC
         glfwSetWindowShouldClose(win, true);
-    
     if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS) //W
         state.position.z -= speed;
     if (glfwGetKey(win, GLFW_KEY_S) == GLFW_PRESS) //S
@@ -52,10 +57,19 @@ void processInput(GLFWwindow *win, ObjectState &state, float deltaTime)
     }
 }
 
+/*  KEYCALLBACK
+    - called by GLFW once per key event: handles the keys that count ONCE per press (T texture,
+      L light, G wireframe)
+    - only flips the booleans in the ObjectState, the next frame picks them up (T sets
+      blendTarget, the fade itself is done in updateFade)
+*/
 void keyCallback(GLFWwindow *win, int key, int x, int action, int y)
 {
     (void)x;
     (void)y;
+
+    if (action != GLFW_PRESS)
+        return ;
 
     ObjectState *state = static_cast<ObjectState *>(glfwGetWindowUserPointer(win));
     if (key == GLFW_KEY_T && action == GLFW_PRESS)
@@ -66,6 +80,11 @@ void keyCallback(GLFWwindow *win, int key, int x, int action, int y)
         state->wireframe = (state->wireframe == 0) ? 1 : 0;
 }
 
+/*  SCROLLCALLBACK
+    - mouse wheel = zoom: moves the camera distance by one zoomStep per wheel tick (scroll up =
+      closer)
+    - the limits (min / max distance) are applied with std::clamp in main()
+*/
 void scrollCallback(GLFWwindow *win, double x, double yOffset)
 {
     (void)x;
@@ -73,12 +92,53 @@ void scrollCallback(GLFWwindow *win, double x, double yOffset)
     state->distance -= static_cast<float>(yOffset) * state->zoomStep;
 }
 
+/*  UPDATEFPS
+    - counts the frames and writes the result into the window title once per second
+    - the static variables keep their value between the calls, so no extra state is needed in
+      main()
+*/
+void updateFps(GLFWwindow *win, float deltaTime)
+{
+    static int frames = 0;
+    static float timer = 1.0f;
+
+    frames ++;
+    timer += deltaTime;
+    if (timer >= 1.0f)
+    {
+        glfwSetWindowTitle(win, ("ft_scop | FPS : " + std::to_string(frames)).c_str());
+        frames = 0;
+        timer = 0.0f;
+    }
+}
+
+/*  UPDATEFADE
+    - moves state.blend (0 = colors, 1 = texture) smoothly towards state.blendTarget, so
+      pressing T fades instead of jumping
+    - std::min / std::max stop exactly on the target, the value can never overshoot
+*/
+void updateFade(ObjectState &state, float deltaTime)
+{
+    float step = cfg::FADE_SPEED * deltaTime;
+
+    if (state.blend < state.blendTarget)
+        state.blend = std::min(state.blend + step, state.blendTarget);
+    else if (state.blend > state.blendTarget)
+        state.blend = std::max(state.blend - step, state.blendTarget);
+}
+
+/*  MAIN
+    - loads the model, shader and texture (RAII: everything is freed automatically, even if an
+      exception is thrown)
+    - sizes the scene from the bounding box, so any model fits the camera
+    - render loop: deltaTime -> update -> camera + matrices (model, view, proj) -> draw
+*/
 int main(int ac, char **av)
 {
     if (ac < 2)
     {
         std::cerr << "Please use the program correct" << std::endl;
-        std::cerr << "Usage: ./scop <file.obj> <texture.bmp>" << std::endl;
+        std::cerr << "Usage: ./scop <file.obj> [texture.bmp]" << std::endl;
         return (1);
     }
     try
@@ -90,20 +150,14 @@ int main(int ac, char **av)
         Mesh mesh(parser.getVertices(), parser.getIndices());
         Texture texture(ac > 2 ? av[2] : "textures/kitty.bmp");
 
-        //init scene with bounding box
+        //init scene with bounds
         Vec3 objectCenter = parser.getBounds().center();
         float objectRadius = parser.getBounds().radius();
-        Camera camera(objectCenter + Vec3(0, 0, objectRadius * 2.5f), objectCenter);        
         float nearPlane = objectRadius * 0.01f;
         float farPlane = objectRadius * 10.0f;        
+        Camera camera(objectCenter + Vec3(0, 0, objectRadius * 2.5f), objectCenter);        
 
-        //create viewmatrix
-        //Mat4 proj = Mat4::perspective(45.0f * 3.14159f / 180.0f, window.getAspectRatio(), nearPlane, farPlane);
-        
         //render loop
-        float lastFrame = static_cast<float>(glfwGetTime());
-        int frames = 0;
-        float fpsTimer = 0.0f;
         ObjectState state;
         state.distance = state.startDistance = objectRadius * cfg::CAM_DISTANCE;
         state.zoomStep  = objectRadius * 0.1f;
@@ -111,49 +165,38 @@ int main(int ac, char **av)
         glfwSetScrollCallback(window.getHandle(), scrollCallback);
         glfwSetWindowUserPointer(window.getHandle(), &state);
         glfwSetKeyCallback(window.getHandle(), keyCallback);
+
+        float lastFrame = static_cast<float>(glfwGetTime());
         while(!window.shouldClose())
         {
-            //delta time
+            //get new time
             float currentFrame = glfwGetTime();
             float deltaTime = currentFrame - lastFrame;
             lastFrame = currentFrame;
-            frames ++;
-            fpsTimer += deltaTime;
-            if (fpsTimer >= 1.0f)
-            {
-                glfwSetWindowTitle(window.getHandle(), ("ft_scop | FPS : " + std::to_string(frames)).c_str());
-                frames = 0;
-                fpsTimer = 0.0f;
-            }
-            //movement
+
+            //update / fps-counter / key-callbacks / fade callback
+            updateFps(window.getHandle(), deltaTime);
             processInput(window.getHandle(), state, deltaTime);
             if (!state.dragging)
                 state.autoRotation += cfg::AUTO_ROT * deltaTime;
-            
-            //fade
-            float step = cfg::FADE_SPEED * deltaTime;
-            if (state.blend < state.blendTarget)
-                state.blend = std::min(state.blend + step, state.blendTarget);
-            else if (state.blend > state.blendTarget)
-                state.blend = std::max(state.blend - step, state.blendTarget);
-    
+            updateFade(state, deltaTime);
+
             state.distance = std::clamp(state.distance, objectRadius * 1.2f, objectRadius * 6.0f);
             camera.position = objectCenter + Vec3(0, 0, state.distance);
-            Mat4 view = camera.getViewMatrix();
-            
-
-            //clear buffer / CLEAR
-            glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             
             //calculate view changes / CALCULATE
             Mat4 toOrigin = Mat4::translate(objectCenter * -1.0f);
             Mat4 rotation = Mat4::rotateX(state.pitch) * Mat4::rotateY(state.autoRotation + state.yaw);
             Mat4 backToPlace = Mat4::translate((objectCenter + state.position)); 
             Mat4 model = backToPlace * rotation * toOrigin;
+            Mat4 view = camera.getViewMatrix();
             Mat4 proj = Mat4::perspective(cfg::FOV_DEG * 3.14159f / 180.0f, window.getAspectRatio(), nearPlane, farPlane);
             Mat4 mvp = proj * view * model;
             
+            //clear buffer / CLEAR
+            glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
             // draw new image / DRAW
             shader.use();
             shader.setMat4("uMVP", mvp);
@@ -166,12 +209,11 @@ int main(int ac, char **av)
             mesh.draw();
             window.swapBufferAndPollEvent();
         }
-}
-catch (const std::exception &e)
-{
-    std::cerr << e.what() << std::endl;
-    return (1);
-}
-
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return (1);
+    }
     return (0);
 }

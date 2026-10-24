@@ -1,5 +1,11 @@
 #include "../inc/scop.hpp"
 
+/*  TEXTURE::TEXTURE
+    - loads the BMP and uploads it as an OpenGL texture (BGR / BGRA, rows are tightly packed:
+      alignment 1)
+    - builds mipmaps (smaller copies against flickering); GL_CLAMP_TO_EDGE: nothing is repeated
+      outside 0..1
+*/
 Texture::Texture(const std::string &tex_path)
 {
     Image img = loadBMP(tex_path);
@@ -21,12 +27,19 @@ Texture::Texture(const std::string &tex_path)
     LOG("! Texture Created");
 }
 
+/*  TEXTURE::~TEXTURE
+    - deletes the OpenGL texture
+*/
 Texture::~Texture()
 {
     glDeleteTextures(1, &_id);
     LOG("! Texture Destroyed");
 }
 
+/*  TEXTURE::BIND
+    - puts the texture on a texture unit; the sampler uniform in the shader must get the same
+      unit number (setInt)
+*/
 void Texture::bind(unsigned int unit) const
 {
     glActiveTexture(GL_TEXTURE0 + unit);

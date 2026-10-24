@@ -2,16 +2,30 @@
 #include <cstdint>
 #include <stdexcept>
 
+/*  READ16
+    - builds a 16 bit number from 2 bytes; BMP is little endian (low byte first)
+*/
 static uint16_t read16(const unsigned char *p)
 {
     return static_cast<uint16_t>(p[0] | (p[1] << 8));
 }
 
+/*  READ32
+    - builds a 32 bit number from 4 bytes, same little endian rule as read16
+    - used to read the header fields (offset, width, height, compression)
+*/
 static uint32_t read32(const unsigned char *p)
 {
     return (static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8) | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24));
 }
 
+/*  LOADBMP
+    - own BMP loader: reads an uncompressed 24 / 32 bit file and returns the raw pixels in
+      BGR(A) order
+    - rows are copied one by one: the 4-byte padding is dropped, top-down files are flipped, so
+      row 0 is the BOTTOM row (what OpenGL expects)
+    - throws a runtime_error for missing, truncated or unsupported files
+*/
 Image loadBMP(const std::string &tex_path)
 {
     std::ifstream file(tex_path, std::ios::binary);

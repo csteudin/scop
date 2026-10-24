@@ -1,5 +1,8 @@
 #include "../inc/scop.hpp"
 
+/*  MESH::MESH
+    - remembers how many indices to draw and uploads all data to the GPU (setupMesh)
+*/
 Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices)
 {
     _indexCount = indices.size();
@@ -7,6 +10,9 @@ Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<unsigned int> 
     LOG("! Mesh Created");
 }
 
+/*  MESH::~MESH
+    - frees the 3 OpenGL objects (VAO, VBO, EBO)
+*/
 Mesh::~Mesh()
 {
     glDeleteVertexArrays(1, &_VAO);
@@ -15,12 +21,21 @@ Mesh::~Mesh()
     LOG("! Mesh Destroyed");
 }
 
+/*  MESH::DRAW
+    - binds the VAO and draws all triangles with one indexed call; the VAO remembers buffers and
+      layout
+*/
 void Mesh::draw() const
 {
     glBindVertexArray(_VAO);
     glDrawElements(GL_TRIANGLES, _indexCount, GL_UNSIGNED_INT, 0);
 }
 
+/*  MESH::SETUPMESH
+    - creates VAO / VBO / EBO and copies the vertices and indices into the GPU buffers
+    - describes the Vertex layout: 0 = position, 1 = uv, 2 = normal, 3 = color (same numbers as
+      "layout (location = N)" in the vertex shader)
+*/
 void Mesh::setupMesh(const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices)
 {
     glGenVertexArrays(1, &_VAO);

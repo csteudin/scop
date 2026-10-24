@@ -1,8 +1,10 @@
 #include "../inc/scop.hpp"
-#include <exception>
-#include <sstream>
-#include <stdexcept>
 
+/*  RESOLVEINDEX
+    - turns an OBJ index into a vector index: positive counts from 1, negative counts from the
+      end (-1 = last)
+    - throws if the index is 0 or outside of the list
+*/
 static size_t resolveIndex(int idx, size_t size)
 {
     long resolved = (idx > 0) ? idx - 1 : static_cast<long>(size) + idx;
@@ -13,6 +15,11 @@ static size_t resolveIndex(int idx, size_t size)
     return (static_cast<size_t>(resolved));
 }
 
+/*  PARSER::PARSER
+    - reads the .obj line by line; an error message gets the line number
+    - afterwards it fills in what the file did not bring: normals, bounding box, texture
+      coordinates
+*/
 Parser::Parser(const std::string &path)
 {
     LOG("! Parser Created");
@@ -38,25 +45,8 @@ Parser::Parser(const std::string &path)
         throw std::runtime_error("OBJ: no faces found");
     
     if (_normals.empty())
-    {
-        for (size_t i = 0; i + 2 < _indices.size(); i += 3)
-        {
-            Vertex &v0 = _vertices[_indices[i]];
-            Vertex &v1 = _vertices[_indices[i + 1]];
-            Vertex &v2 = _vertices[_indices[i + 2]];
-
-            Vec3 edge1 = v1.position - v0.position;
-            Vec3 edge2 = v2.position - v0.position;
-            Vec3 normal = edge1.cross(edge2).normalize();
-
-            v0.normal = normal;
-            v1.normal = normal;
-            v2.normal = normal;
-        }
-    }
-
+        generateNormals();
     computeBounds();
-
     if (_uvs.empty() || _regenUVs ==true)
         generateUVs();
 
@@ -65,22 +55,37 @@ Parser::Parser(const std::string &path)
     LOG("Triangles: " << _indices.size() / 3);
 }
 
+/*  PARSER::GETVERTICES
+    - read-only access to the finished vertex list
+*/
 const std::vector<Vertex> &Parser::getVertices() const
 {
     return (_vertices);
 }
 
+/*  PARSER::GETINDICES
+    - read-only access to the triangle list (3 indices = 1 triangle)
+*/
 const std::vector<unsigned int> &Parser::getIndices() const
 {
     return (_indices);
 }
 
+/*  PARSER::GETBOUNDS
+    - read-only access to the bounding box (center and radius size the scene in main)
+*/
 const BoundingBox &Parser::getBounds() const
 {
     return (_bounds);
 }
 
 //private
+
+/*  PARSER::PARSELINE
+    - looks at the first word of a line: v / vt / vn store a value, f builds a face
+    - a vt outside 0..1 or with a missing value sets _regenUVs, then the UVs are generated later
+    - everything else (comments, o, g, s, usemtl, ...) is ignored
+*/
 void Parser::parseLine(const std::string &line)
 {
     std::istringstream iss(line);
@@ -109,13 +114,17 @@ void Parser::parseLine(const std::string &line)
         _normals.push_back(Vec3(x, y, z));
     }
     else if (prefix == "f")
-    {
         parseFace(iss);
-    }
     else
         return ;
 }
 
+/*  PARSER::PARSEFACE
+    - reads one face line; every corner (v, v/vt, v//vn or v/vt/vn) becomes its OWN vertex, so
+      each face can have its own color and normal
+    - every face gets one random shade of gray (rand() is not seeded: same look on every run)
+    - a polygon with more than 3 corners is split into triangles (fan around the first corner)
+*/
 void Parser::parseFace(std::istringstream &iss)
 {
     std::vector<unsigned int> faceIndices;
@@ -161,6 +170,11 @@ void Parser::parseFace(std::istringstream &iss)
     }
 }
 
+/*  PARSER::COMPUTEBOUNDS
+    - finds the smallest and largest x / y / z of all vertices
+    - the box gives the center (rotation point) and radius (camera distance, move speed), so
+      every model fits
+*/
 void Parser::computeBounds()
 {
     _bounds.min = _vertices[0].position;
@@ -177,6 +191,12 @@ void Parser::computeBounds()
     }
 }
 
+/*  PARSER::GENERATEUVS
+    - planar projection: every triangle is projected along the axis its normal points to, the
+      other two coordinates become u and v
+    - ONE common size (longest side) for both directions, so the texture is not stretched
+    - used when the file has no usable vt
+*/
 void Parser::generateUVs()
 {
     float size = _bounds.maxExtent();
@@ -202,5 +222,27 @@ void Parser::generateUVs()
             else
                 v->uv = Vec2(p.x / size, p.y / size);      // Seite zeigt in Z
         }
+    }
+}
+
+/*  PARSER::GENERATENORMALS
+    - flat normals: one per triangle, from the cross product of two edges
+    - used when the file has no vn (needed for the light)
+*/
+void Parser::generateNormals()
+{
+    for (size_t i = 0; i + 2 < _indices.size(); i += 3)
+    {
+        Vertex &v0 = _vertices[_indices[i]];
+        Vertex &v1 = _vertices[_indices[i + 1]];
+        Vertex &v2 = _vertices[_indices[i + 2]];
+
+        Vec3 edge1 = v1.position - v0.position;
+        Vec3 edge2 = v2.position - v0.position;
+        Vec3 normal = edge1.cross(edge2).normalize();
+
+        v0.normal = normal;
+        v1.normal = normal;
+        v2.normal = normal;
     }
 }
